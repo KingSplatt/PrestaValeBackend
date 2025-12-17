@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model cliente {
+  clienteid             Int                     @id @default(autoincrement())
+  nombre                String                  @db.VarChar(255)
+  saldofavor            Decimal?                @default(0.00) @db.Decimal(9, 2)
+  configuracioncomision configuracioncomision[]
+  vale                  vale[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model configuracioncomision {
+  configuracionid Int      @id @default(autoincrement())
+  clienteid       Int?
+  dia             Int
+  porcentaje      Decimal  @db.Decimal(5, 2)
+  cliente         cliente? @relation(fields: [clienteid], references: [clienteid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([clienteid], map: "idx_comision_cliente")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pago {
+  pagoid    Int       @id @default(autoincrement())
+  valeid    Int?
+  monto     Decimal   @db.Decimal(9, 2)
+  fechapago DateTime? @default(now()) @db.Timestamp(6)
+  vale      vale?     @relation(fields: [valeid], references: [valeid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([valeid], map: "idx_pago_vale")
+}
+
+model vale {
+  valeid           Int          @id @default(autoincrement())
+  montototal       Decimal      @db.Decimal(9, 2)
+  saldo            Decimal      @db.Decimal(9, 2)
+  estatus          estado_vale? @default(ACTIVO)
+  fechacreacion    DateTime?    @default(now()) @db.Timestamp(6)
+  fechavencimiento DateTime     @db.Timestamp(6)
+  clienteid        Int?
+  pago             pago[]
+  cliente          cliente?     @relation(fields: [clienteid], references: [clienteid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([clienteid], map: "idx_vale_cliente")
+}
+
+enum estado_vale {
+  ACTIVO
+  PAGADO
+}
