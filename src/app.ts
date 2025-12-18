@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import clientRoutes from './routes/clientRoutes';
 import voucherRoutes from './routes/voucherRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import commisionConfigRoutes from './routes/commissionConfigRoutes';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.get('/health', (req, res) => {
 app.use('/api', clientRoutes);
 app.use('/api', voucherRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api', commisionConfigRoutes);
 
 // Iniciar servidor
 app.listen(PORT, () => {
