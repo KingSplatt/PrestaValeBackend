@@ -104,7 +104,7 @@ export const processPayment = async (voucherID: VoucherID, paymentAmount: number
             }
         });
 
-        // 8. Guardar excedente como crédito 
+        //Guardar excedente como credito 
         if (overpayment > 0) {
             await tx.client.update({
                 where: { clientid: voucher.clientid! },

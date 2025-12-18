@@ -13,9 +13,7 @@ CREATE TABLE Client (
 CREATE TABLE CommissionConfig (
     configId SERIAL PRIMARY KEY,
     clientId INTEGER REFERENCES Client(clientId) ON DELETE CASCADE,
-    day INTEGER NOT NULL,
-    percentage DECIMAL(5, 2) NOT NULL
-    -- CONSTRAINT day_range CHECK (day >= 1 AND day <= 31)
+    name VARCHAR(255) NOT NULL
 );
 
 -- 4. Tabla de Vales
@@ -41,3 +39,8 @@ CREATE TABLE Payment (
 CREATE INDEX idx_voucher_client ON Voucher(clientId);
 CREATE INDEX idx_payment_voucher ON Payment(voucherId);
 CREATE INDEX idx_commission_client ON CommissionConfig(clientId);
+
+-- Registros iniciales commsion config
+INSERT INTO CommissionConfig (clientId, name) VALUES
+(1, 'DEFUALT'),
+(2, 'PREMIUM');
