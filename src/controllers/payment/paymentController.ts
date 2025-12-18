@@ -47,46 +47,40 @@ export const createPayment = async (newPayment: payment) => {
 };
 
 // Procesar pago con todas las reglas de negocio
-export const processPayment = async (voucherID: VoucherID, paymentAmount: number, fechapago : Date) => {
-    // Los pagos no pueden ser negativos o cero
-    if (paymentAmount <= 0) throw new Error('El monto del pago debe ser mayor a cero');
+export const processPayment = async (voucherID: VoucherID, paymentAmount: number, fechapago: Date) => {
+    if (paymentAmount <= 0) throw new Error('El monto del pago debe ser mayor a cero'); 
 
-    //Transaccion para asegurar datos
     return await prisma.$transaction(async (tx) => {
-        const voucher = await tx.voucher.findUnique({ //vale / cliente
+        const voucher = await tx.voucher.findUnique({
             where: { voucherid: voucherID.voucherId },
             include: { client: true }
         });
 
         if (!voucher) throw new Error('Vale no encontrado');
-        if (voucher.status === 'PAID') throw new Error('No se pueden registrar pagos a vales que ya están liquidados');
+        if (voucher.status === 'PAID') throw new Error('No se pueden registrar pagos a vales que ya están liquidados'); 
         
         const today = fechapago;
-        const dueDate = new Date(voucher.duedate!);
         
-        // Si el pago es antes o en la fecha de vencimiento, no hay comisión (0%)
-        let commissionPercentage = 0;
-        if (today > dueDate) {
-            let schema = obtenerSchemaComisionPorId(voucher.client!.commissionconfigid as number);
-            commissionPercentage = obtenerPorcentajePorEsquema(schema, today);
-        }
+        //Esquema cliente
+        const schema = obtenerSchemaComisionPorId(voucher.client!.commissionconfigid as number);
+        const commissionPercentage = obtenerPorcentajePorEsquema(schema, today, voucher.duedate as Date);
         
-        // total = Total - Comision (1000-200=800)
-        const netAmountlessComission = calcularMontoPagar(Number(voucher.totalamount), commissionPercentage); // a pagar neto sin comision
-        const paidInMoment = Number(voucher.totalamount) - Number(voucher.balance); // pagado hasta el momento
-        let Remaining = netAmountlessComission - paidInMoment; // restante a pagar neto
-        
+        //Monto Neto de Liquidacion
+        //1000-200 = 800
+        const totalNetoALiquidar = calcularMontoPagar(Number(voucher.totalamount), commissionPercentage);
+        const pagadoRealmente = Number(voucher.totalamount) - Number(voucher.balance);
+        const faltanteParaLiquidar = totalNetoALiquidar - pagadoRealmente;
 
-        let auxMountToVoucher = paymentAmount;
+        let montoAplicadoAlVale = paymentAmount;
         let overpayment = 0;
 
         //excedentes
-        if (paymentAmount > Remaining) {
-            overpayment = paymentAmount - Remaining;
-            auxMountToVoucher = Remaining;
+        if (paymentAmount > faltanteParaLiquidar) {
+            overpayment = paymentAmount - faltanteParaLiquidar;
+            montoAplicadoAlVale = faltanteParaLiquidar;
         }
 
-        //registro pago nvo
+        //Registrar el pago
         const newPayment = await tx.payment.create({
             data: {
                 voucherid: voucher.voucherid,
@@ -96,21 +90,21 @@ export const processPayment = async (voucherID: VoucherID, paymentAmount: number
         });
 
         //Actualizar el saldo del vale
-        const newBalance = Number(voucher.balance) - auxMountToVoucher;
-
+        const nuevoSaldo = Number(voucher.balance) - montoAplicadoAlVale;
+        
         //Definir nuevo estado del vale
-        const minBalanceForPaid = Number(voucher.totalamount) - netAmountlessComission;
-        const newStatus = (newBalance <= minBalanceForPaid) ? 'PAID' : 'ACTIVE';
+        const montoComision = Number(voucher.totalamount) - totalNetoALiquidar;
+        const newStatus = (nuevoSaldo <= montoComision) ? 'PAID' : 'ACTIVE'; 
 
         const updatedVoucher = await tx.voucher.update({
             where: { voucherid: voucherID.voucherId },
             data: {
-                balance: newBalance,
+                balance: nuevoSaldo,
                 status: newStatus
             }
         });
 
-        //guardar lo sobrante como credito para el cliente
+        // 8. Guardar excedente como crédito 
         if (overpayment > 0) {
             await tx.client.update({
                 where: { clientid: voucher.clientid! },
@@ -119,27 +113,26 @@ export const processPayment = async (voucherID: VoucherID, paymentAmount: number
                 }
             });
         }
-        //si el vale se liquida, sumar el saldo al credito del cliente
+
         if(newStatus === 'PAID'){
             await tx.client.update({
-                where: {clientid: voucher.clientid!},
+                where: { clientid: voucher.clientid! },
                 data: {
-                    creditbalance: { increment: newBalance }
+                    creditbalance: { increment: montoComision }
                 }
-            })
+            });
         }
 
         return {
             payment: newPayment,
             voucher: updatedVoucher,
-            netAmountlessComission,
+            totalNetoALiquidar,
+            faltanteParaLiquidar,
             commissionPercentage,
-            amountApplied: auxMountToVoucher,
+            amountApplied: montoAplicadoAlVale,
             overpaymentSaved: overpayment,
             newStatus,
-            message: newStatus === 'PAID' 
-                ? 'Vale liquidado' 
-                : 'Pago registrado'
+            message: newStatus === 'PAID' ? 'Vale liquidado' : 'Pago parcial registrado'
         };
     });
 }

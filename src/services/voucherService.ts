@@ -1,15 +1,16 @@
 // Constantes para cálculo de fechas
 const DAY_MAX = 15;
 const DAY_LIMIT = 14;
+const DAYMONT = 30;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000; // Milisegundos en un día
 
 export const REGLAS_COMISION = {
   DEFAULT: { 
-    15: 20, 16: 20, 17: 20, 18: 19, 19: 17, 20: 14, 21: 10, 22: 5
+    15: 18, 16: 17, 17: 16, 18: 14, 19: 10, 20: 5
   },
   PREMIUM: {
-    15: 25, 16: 25, 17: 25, 18: 22, 19: 20, 20: 18, 21: 15, 22: 10
+    15: 20, 16: 19, 17: 17, 18: 14, 19: 10, 20: 5
   }
 };
 
@@ -17,13 +18,12 @@ export const obtenerSchemaComisionPorId = (configId: number): { [key: number]: n
   return configId === 2 ? REGLAS_COMISION.PREMIUM : REGLAS_COMISION.DEFAULT;
 };
 
-export const obtenerPorcentajePorEsquema = (schema: { [key: number]: number }, fechaPago: Date): number => {
-  const dia = fechaPago.getDate();
-  if (dia < 15) return schema === REGLAS_COMISION.PREMIUM ? 25 : 20; 
-
-  const esquema = schema === REGLAS_COMISION.PREMIUM ? REGLAS_COMISION.PREMIUM : REGLAS_COMISION.DEFAULT;
-
-  return (esquema as any)[dia] ?? 0; 
+export const obtenerPorcentajePorEsquema = (shema: { [key: number]: number }, fechaPago: Date, fechaVencimiento: Date): number => {
+    const diasTranscurridos = calcularDiasTranscurridos(fechaVencimiento, fechaPago);
+    let diaPertence = DAYMONT - diasTranscurridos;
+    console.log('Días transcurridos:', diasTranscurridos, 'Día pertenece:', diaPertence);
+    if (diaPertence < 15) diaPertence = 15;
+    return shema[diaPertence] || 0;
 };
 
 export function calcularFechaVencimiento(fechaCreacion: Date): Date {
@@ -35,15 +35,11 @@ export function calcularFechaVencimiento(fechaCreacion: Date): Date {
 }
 
 export function calcularDiasTranscurridos(fechaInicio: Date, fechaFin: Date = new Date()): number {
-    const diffTime = fechaFin.getTime() - fechaInicio.getTime();
+    const diffTime = Math.abs(fechaFin.getTime() - fechaInicio.getTime());
     return Math.ceil(diffTime / (DAY_IN_MS));
 }
 
 export function calcularMontoPagar(totalVale: number, porcentajeComision: number): number {
     const comision = (totalVale * porcentajeComision) / 100;
     return totalVale - comision;
-}
-
-export function calcularComision(totalVale: number, porcentajeComision: number): number {
-    return (totalVale * porcentajeComision) / 100;
 }
