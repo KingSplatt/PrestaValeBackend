@@ -50,14 +50,16 @@ export const updateClient = async (prevClient : Client) => {
   try {
     const { clientId, name, creditBalance } = prevClient;
     
+    if (!clientId) throw new Error('clientId es requerido para actualizar');
+    
     const client = await prisma.client.update({
       where: { clientid: clientId },
       data: { name, creditbalance: creditBalance }
     });
     
     return client;
-  } catch (error) {
-    throw new Error('Error al actualizar cliente');
+  } catch (error: any) {
+    throw new Error('Error al actualizar cliente: ' + error.message);
   }
 };
 

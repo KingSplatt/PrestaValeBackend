@@ -9,3 +9,4 @@ export type Voucher = {
 }
 
 export type VoucherInfo = Omit<Voucher, `clientId`>;
+export type VoucherID = Pick<Voucher, 'voucherId'>;
