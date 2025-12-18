@@ -6,3 +6,4 @@ export type payment = {
 }
 
 export type PaymentInfo = Omit<payment, `voucherId`>;
+export type PaymentID = Pick<payment, 'paymentId'>;

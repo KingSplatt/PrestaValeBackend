@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import clientRoutes from './routes/clientRoutes';
 import voucherRoutes from './routes/voucherRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api', clientRoutes);
 app.use('/api', voucherRoutes);
+app.use('/api', paymentRoutes);
 
 // Iniciar servidor
 app.listen(PORT, () => {
