@@ -27,13 +27,14 @@ router.post('/payments', async (req: Request, res: Response) => {
 //http://localhost:3000/api/payments/process
 router.post('/payments/process', async (req: Request, res: Response) => {
     try {
-        const { voucherId, amount } = req.body;
+        const { voucherId, amount, fecha } = req.body;
         
         if (!voucherId || !amount) return res.status(400).json({ error: 'voucherId y amount son requeridos' });
         
         const result = await PaymentControllers.processPayment(
             { voucherId },
-            amount
+            amount,
+            fecha ? new Date(fecha) : new Date()
         );
         
         res.status(201).json(result);
