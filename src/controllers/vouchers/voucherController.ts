@@ -1,6 +1,7 @@
 import type { Voucher, VoucherID } from "../../types/voucherType";
 import type { ClientID } from "../../types/clientType";
 import { prisma } from "../../config/database.js";
+import { calcularFechaVencimiento } from "../../services/voucherService";
 
 //Obtener todos los vales de un cliente
 export const getAllVouchersClient = async (clientId : ClientID) => {
@@ -32,7 +33,8 @@ export const getVoucherByIdAndClient = async (voucherId : VoucherID, clientId : 
 //Crear un vale nuevo por un cliente
 export const createVoucher = async (newVoucher : Voucher) => {
     try {
-        const { totalAmount, balance, dueDate, clientId, status } = newVoucher;
+        const { totalAmount, balance, clientId, status } = newVoucher;
+        let dueDate = calcularFechaVencimiento(new Date());
         const voucher = await prisma.voucher.create({
             data: {
                 totalamount: totalAmount,

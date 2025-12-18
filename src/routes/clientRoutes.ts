@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import * as ClientControllers from '../controllers/clients/clientController.js';
+import type { newClient, ClientID } from '../types/clientType.js';
 
 const router = express.Router();
 
@@ -14,13 +15,17 @@ router.get('/clients/:id', async (req: Request, res: Response) => {
     const clientId = parseInt(req.params.id as string);
     const client = await ClientControllers.getClientById({ clientId });
     res.status(200).json(client);
-})
+});
 
-//https:localhost:3000/api/clients
+//https:localhost:3000/api/clients - PENDIENTE
 router.post('/clients', async (req: Request, res: Response) => {
-    const newClient = req.body;
-    const createdClient = await ClientControllers.createClient(newClient);
-    res.status(201).json(createdClient);     
+    try {
+        const newClientData: newClient = req.body;
+        const createdClient = await ClientControllers.createClient(newClientData);
+        res.status(201).json(createdClient);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
 });
 
 //https:localhost:3000/api/clients

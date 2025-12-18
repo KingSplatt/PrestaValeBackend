@@ -1,4 +1,4 @@
-import type { Client, ClientID } from '../../types/clientType';
+import type { Client, ClientID, newClient } from '../../types/clientType';
 import { prisma } from '../../config/database.js';
 
 // Obtener todos los clientes
@@ -28,20 +28,22 @@ export const getClientById = async (id : ClientID) => {
 };
 
 // Crear cliente
-export const createClient = async (newClient: Client) => {
+export const createClient = async (newClient: newClient) => {
   try {
-    const { name, creditBalance } = newClient;
-    
+    const { name, creditBalance, commissionConfigId } = newClient;
+
+    // Crear cliente con referencia al esquema de comisiones
     const client = await prisma.client.create({
       data: {
         name,
-        creditbalance: creditBalance || 0
+        creditbalance: creditBalance || 0,
+        commissionconfigid: commissionConfigId || 1
       }
     });
     
     return client;
-  } catch (error) {
-    throw new Error('Error al crear cliente');
+  } catch (error: any) {
+    throw new Error('Error al crear cliente: ' + error.message);
   }
 };
 

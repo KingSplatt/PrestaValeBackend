@@ -8,21 +8,20 @@ datasource db {
 }
 
 model client {
-  clientid         Int                @id @default(autoincrement())
-  name             String             @db.VarChar(255)
-  creditbalance    Decimal?           @default(0.00) @db.Decimal(9, 2)
-  commissionconfig commissionconfig[]
+  clientid         Int               @id @default(autoincrement())
+  name             String            @db.VarChar(255)
+  creditbalance    Decimal?          @default(0.00) @db.Decimal(9, 2)
+  commissionconfigid Int?            @default(1)
+  commissionconfig commissionconfig? @relation(fields: [commissionconfigid], references: [configid], onDelete: SetNull, onUpdate: NoAction)
   voucher          voucher[]
+
+  @@index([commissionconfigid], map: "idx_client_commissionconfig")
 }
 
 model commissionconfig {
-  configid   Int     @id @default(autoincrement())
-  clientid   Int?
-  day        Int
-  percentage Decimal @db.Decimal(5, 2)
-  client     client? @relation(fields: [clientid], references: [clientid], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([clientid], map: "idx_commission_client")
+  configid Int      @id
+  name     String   @unique @db.VarChar(50)
+  client   client[]
 }
 
 model payment {
