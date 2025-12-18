@@ -28,3 +28,10 @@ Despues de actualizar el schema, generar el cliente de Prisma con el siguiente c
 Esto creara el cliente de Prisma que se utilizara en la aplicacion para interactuar con la base de datos. la identifiara como objetos y sus relaciones.
 
 
+## Crear el servidor con express y TypeScript
+Para iniciar el servidor, ejecutar el siguiente comando:
+```
+    npm run dev
+```
+
+## Endpoints disponibles

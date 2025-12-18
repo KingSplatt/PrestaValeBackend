@@ -7,51 +7,49 @@ datasource db {
   provider = "postgresql"
 }
 
-model cliente {
-  clienteid             Int                     @id @default(autoincrement())
-  nombre                String                  @db.VarChar(255)
-  saldofavor            Decimal?                @default(0.00) @db.Decimal(9, 2)
-  configuracioncomision configuracioncomision[]
-  vale                  vale[]
+model client {
+  clientid         Int                @id @default(autoincrement())
+  name             String             @db.VarChar(255)
+  creditbalance    Decimal?           @default(0.00) @db.Decimal(9, 2)
+  commissionconfig commissionconfig[]
+  voucher          voucher[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model configuracioncomision {
-  configuracionid Int      @id @default(autoincrement())
-  clienteid       Int?
-  dia             Int
-  porcentaje      Decimal  @db.Decimal(5, 2)
-  cliente         cliente? @relation(fields: [clienteid], references: [clienteid], onDelete: Cascade, onUpdate: NoAction)
+model commissionconfig {
+  configid   Int     @id @default(autoincrement())
+  clientid   Int?
+  day        Int
+  percentage Decimal @db.Decimal(5, 2)
+  client     client? @relation(fields: [clientid], references: [clientid], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([clienteid], map: "idx_comision_cliente")
+  @@index([clientid], map: "idx_commission_client")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model pago {
-  pagoid    Int       @id @default(autoincrement())
-  valeid    Int?
-  monto     Decimal   @db.Decimal(9, 2)
-  fechapago DateTime? @default(now()) @db.Timestamp(6)
-  vale      vale?     @relation(fields: [valeid], references: [valeid], onDelete: Cascade, onUpdate: NoAction)
+model payment {
+  paymentid   Int       @id @default(autoincrement())
+  voucherid   Int?
+  amount      Decimal   @db.Decimal(9, 2)
+  paymentdate DateTime? @default(now()) @db.Timestamp(6)
+  voucher     voucher?  @relation(fields: [voucherid], references: [voucherid], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([valeid], map: "idx_pago_vale")
+  @@index([voucherid], map: "idx_payment_voucher")
 }
 
-model vale {
-  valeid           Int          @id @default(autoincrement())
-  montototal       Decimal      @db.Decimal(9, 2)
-  saldo            Decimal      @db.Decimal(9, 2)
-  estatus          estado_vale? @default(ACTIVO)
-  fechacreacion    DateTime?    @default(now()) @db.Timestamp(6)
-  fechavencimiento DateTime     @db.Timestamp(6)
-  clienteid        Int?
-  pago             pago[]
-  cliente          cliente?     @relation(fields: [clienteid], references: [clienteid], onDelete: Cascade, onUpdate: NoAction)
+model voucher {
+  voucherid   Int             @id @default(autoincrement())
+  totalamount Decimal         @db.Decimal(9, 2)
+  balance     Decimal         @db.Decimal(9, 2)
+  status      voucher_status? @default(ACTIVE)
+  createdat   DateTime?       @default(now()) @db.Timestamp(6)
+  duedate     DateTime        @db.Timestamp(6)
+  clientid    Int?
+  payment     payment[]
+  client      client?         @relation(fields: [clientid], references: [clientid], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([clienteid], map: "idx_vale_cliente")
+  @@index([clientid], map: "idx_voucher_client")
 }
 
-enum estado_vale {
-  ACTIVO
-  PAGADO
+enum voucher_status {
+  ACTIVE
+  PAID
 }
