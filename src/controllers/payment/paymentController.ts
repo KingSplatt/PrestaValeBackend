@@ -62,8 +62,14 @@ export const processPayment = async (voucherID: VoucherID, paymentAmount: number
         if (voucher.status === 'PAID') throw new Error('No se pueden registrar pagos a vales que ya están liquidados');
         
         const today = fechapago;
-        let schema = obtenerSchemaComisionPorId(voucher.client!.commissionconfigid as number);
-        const commissionPercentage = obtenerPorcentajePorEsquema(schema,today);
+        const dueDate = new Date(voucher.duedate!);
+        
+        // Si el pago es antes o en la fecha de vencimiento, no hay comisión (0%)
+        let commissionPercentage = 0;
+        if (today > dueDate) {
+            let schema = obtenerSchemaComisionPorId(voucher.client!.commissionconfigid as number);
+            commissionPercentage = obtenerPorcentajePorEsquema(schema, today);
+        }
         
         // total = Total - Comision (1000-200=800)
         const netAmountlessComission = calcularMontoPagar(Number(voucher.totalamount), commissionPercentage); // a pagar neto sin comision
